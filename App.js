@@ -2,7 +2,7 @@ import { StatusBar, SafeAreaView, StyleSheet, Text, View, Pressable, TextInput, 
 import React, { useEffect, useState } from 'react'
 import ShoppingItem from './components/ShoppingItem';
 import { MaterialIcons } from '@expo/vector-icons';
-import { app, db, getFirestore, collection, addDoc, getDocs } from './firebase/index'
+import { app, db, getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from './firebase/index'
 
 export default function App() {
   const [title, setTitle] = useState("");
@@ -16,6 +16,7 @@ export default function App() {
       });
       console.log("Document written with ID: ", docRef.id);
       setTitle("");
+      getShoppingList();
     } catch (e) {
       console.error("Error adding document: ", e);
     }
@@ -37,6 +38,15 @@ export default function App() {
     console.error("Error getting documents: ", e);
   }
   }
+  const deleteShoppingList = async() => {
+    try {
+      const querySnapshot = await getDocs(collection(db, "shopping"));
+      querySnapshot.docs.map((item) => deleteDoc(doc(db, "shopping", item.id)))
+      getShoppingList();  
+    } catch (e) {
+      console.error("Error deleting documents: ", e);
+    }
+  }
   useEffect(() => {
     getShoppingList();
   }, []);
@@ -48,9 +58,9 @@ export default function App() {
         {/* heading */}
         <Text style={styles.heading}> Shopping List </Text>
         {/* no of shopping items */}
-        <Text style={styles.noOfItems}>1</Text>
+        <Text style={styles.noOfItems}>{shoppingList.length}</Text>
         {/* delete all */}
-        <Pressable>
+        <Pressable onPress={deleteShoppingList}>
           <MaterialIcons name="delete" size={30} color="#800" />
         </Pressable>
       </View>
@@ -59,7 +69,7 @@ export default function App() {
         shoppingList.length > 0 
         ? (<FlatList
           data={shoppingList}
-          renderItem={({item}) => <ShoppingItem title={item.title}/>}
+          renderItem={({item}) => <ShoppingItem title={item.title} isChecked={item.isChecked} id={item.id} getShoppingList={getShoppingList}/>}
           keyExtractor={item=> item.id}
           />)
         : (
